@@ -244,17 +244,50 @@ void Ssd1306_ClearScreen(void)
     @brief Renders the contents of the pixel buffer on the LCD
 */
 /**************************************************************************/
+
+#include "stm32f10x.h"
 void Ssd1306_Refresh(void)
 {
-  prv_sendCmd(SSD1306_SETLOWCOLUMN | 0x0);  // low col = 0
-  prv_sendCmd(SSD1306_SETHIGHCOLUMN | 0x0);  // hi col = 0
-  prv_sendCmd(SSD1306_SETSTARTLINE | 0x0); // line #0
+	prv_sendCmd(SSD1306_SETLOWCOLUMN | 0x0);  // low col = 0
+	prv_sendCmd(SSD1306_SETHIGHCOLUMN | 0x0);  // hi col = 0
+	prv_sendCmd(SSD1306_SETSTARTLINE | 0x0); // line #0
 
-  uint16_t i;
+	Ssd1306_HAL_ChipDeselect();		//FIXME может не обязательно
+	Ssd1306_HAL_DataSelect();
+	Ssd1306_HAL_ChipSelect();
+
+	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
+
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+
+	DMA_InitTypeDef dma;
+
+	dma.DMA_PeripheralBaseAddr = (uint32_t)&SPI1->DR;
+	dma.DMA_MemoryBaseAddr = buffer;
+	dma.DMA_DIR = DMA_DIR_PeripheralDST;
+	dma.DMA_BufferSize = 1024;
+	dma.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	dma.DMA_MemoryInc = DMA_MemoryInc_Enable;
+	dma.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+	dma.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+	dma.DMA_Mode = DMA_Mode_Circular;
+	dma.DMA_Priority = DMA_Priority_Medium;
+	dma.DMA_M2M = DMA_M2M_Disable;
+	DMA_Init(DMA1_Channel3, &dma);
+	DMA_Cmd(DMA1_Channel3, ENABLE);
+
+	int i;
+	for (i = 0; i < 1000000; ++i) {
+
+	}
+	//Ssd1306_HAL_ChipDeselect();
+
+
+/*  uint16_t i;
   for (i=0; i<1024; i++) 
   {
 	  prv_sendData(buffer[i]);
-  }
+  }*/
 }
 
 /**************************************************************************/
