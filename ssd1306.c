@@ -47,7 +47,7 @@
 
 #define DELAY(mS)
 
-uint8_t buffer[SSD1306_LCDWIDTH * SSD1306_LCDHEIGHT / 8];
+extern uint8_t buffer[];
 
 static void prv_sendCmd(uint8_t cmd)
 {
@@ -145,7 +145,6 @@ void Ssd1306_Init(uint8_t vccstate)
   prv_sendCmd(SSD1306_DISPLAYALLON_RESUME);           // 0xA4
   prv_sendCmd(SSD1306_SETMULTIPLEX);                  // 0xA8
   prv_sendCmd(0x3F);                                  // 0x3F 1/64 duty
-  //prv_sendCmd(16);
   prv_sendCmd(SSD1306_SETDISPLAYOFFSET);              // 0xD3
   prv_sendCmd(0x0);                                   // no offset
   prv_sendCmd(SSD1306_SETDISPLAYCLOCKDIV);            // 0xD5
@@ -172,18 +171,10 @@ void Ssd1306_Init(uint8_t vccstate)
 
   // Enabled the OLED panel
   prv_sendCmd(SSD1306_DISPLAYON);
+
+  Ssd1306_HAL_Start();
 }
 
-/**************************************************************************/
-/*! 
-    @brief Draws a single pixel in image buffer
-
-    @param[in]  x
-                The x position (0..127)
-    @param[in]  y
-                The y position (0..63)
-*/
-/**************************************************************************/
 void Ssd1306_DrawPixel(uint8_t x, uint8_t y)
 {
   if ((x >= SSD1306_LCDWIDTH) || (y >= SSD1306_LCDHEIGHT))
@@ -192,16 +183,6 @@ void Ssd1306_DrawPixel(uint8_t x, uint8_t y)
   buffer[x+ (y/8)*SSD1306_LCDWIDTH] |= (1 << y%8);
 }
 
-/**************************************************************************/
-/*! 
-    @brief Clears a single pixel in image buffer
-
-    @param[in]  x
-                The x position (0..127)
-    @param[in]  y
-                The y position (0..63)
-*/
-/**************************************************************************/
 void Ssd1306_ClearPixel(uint8_t x, uint8_t y)
 {
   if ((x >= SSD1306_LCDWIDTH) || (y >= SSD1306_LCDHEIGHT))
@@ -210,195 +191,14 @@ void Ssd1306_ClearPixel(uint8_t x, uint8_t y)
   buffer[x+ (y/8)*SSD1306_LCDWIDTH] &= ~(1 << y%8); 
 }
 
-/**************************************************************************/
-/*! 
-    @brief Gets the value (1 or 0) of the specified pixel from the buffer
-
-    @param[in]  x
-                The x position (0..127)
-    @param[in]  y
-                The y position (0..63)
-
-    @return     1 if the pixel is enabled, 0 if disabled
-*/
-/**************************************************************************/
 uint8_t Ssd1306_GetPixel(uint8_t x, uint8_t y)
 {
   if ((x >= SSD1306_LCDWIDTH) || (y >=SSD1306_LCDHEIGHT)) return 0;
   return buffer[x+ (y/8)*SSD1306_LCDWIDTH] & (1 << y%8) ? 1 : 0;
 }
 
-/**************************************************************************/
-/*! 
-    @brief Clears the screen
-*/
-/**************************************************************************/
+
 void Ssd1306_ClearScreen(void)
 {
   memset(buffer, 0, 1024);
-  Ssd1306_Refresh();
-}
-
-/**************************************************************************/
-/*! 
-    @brief Renders the contents of the pixel buffer on the LCD
-*/
-/**************************************************************************/
-
-#include "stm32f10x.h"
-void Ssd1306_Refresh(void)
-{
-	prv_sendCmd(SSD1306_SETLOWCOLUMN | 0x0);  // low col = 0
-	prv_sendCmd(SSD1306_SETHIGHCOLUMN | 0x0);  // hi col = 0
-	prv_sendCmd(SSD1306_SETSTARTLINE | 0x0); // line #0
-
-	Ssd1306_HAL_ChipDeselect();		//FIXME может не обязательно
-	Ssd1306_HAL_DataSelect();
-	Ssd1306_HAL_ChipSelect();
-
-	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
-
-	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
-
-	DMA_InitTypeDef dma;
-
-	dma.DMA_PeripheralBaseAddr = (uint32_t)&SPI1->DR;
-	dma.DMA_MemoryBaseAddr = buffer;
-	dma.DMA_DIR = DMA_DIR_PeripheralDST;
-	dma.DMA_BufferSize = 1024;
-	dma.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	dma.DMA_MemoryInc = DMA_MemoryInc_Enable;
-	dma.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-	dma.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-	dma.DMA_Mode = DMA_Mode_Circular;
-	dma.DMA_Priority = DMA_Priority_Medium;
-	dma.DMA_M2M = DMA_M2M_Disable;
-	DMA_Init(DMA1_Channel3, &dma);
-	DMA_Cmd(DMA1_Channel3, ENABLE);
-
-	int i;
-	for (i = 0; i < 1000000; ++i) {
-
-	}
-	//Ssd1306_HAL_ChipDeselect();
-
-
-/*  uint16_t i;
-  for (i=0; i<1024; i++) 
-  {
-	  prv_sendData(buffer[i]);
-  }*/
-}
-
-/**************************************************************************/
-/*!
-    @brief  Draws a string using the supplied font data.
-
-    @param[in]  x
-                Starting x co-ordinate
-    @param[in]  y
-                Starting y co-ordinate
-    @param[in]  text
-                The string to render
-    @param[in]  font
-                Pointer to the FONT_DEF to use when drawing the string
-
-    @section Example
-
-    @code 
-
-    #include "drivers/lcd/bitmap/ssd1306/ssd1306.h"
-    #include "drivers/lcd/smallfonts.h"
-    
-    // Configure the pins and initialise the LCD screen
-    Ssd1306_Init();
-
-    // Render some text on the screen
-    Ssd1306_DrawString(1, 10, "5x8 System", Font_System5x8);
-    Ssd1306_DrawString(1, 20, "7x8 System", Font_System7x8);
-
-    // Refresh the screen to see the results
-    Ssd1306_Refresh();
-
-    @endcode
-*/
-/**************************************************************************/
-/*void Ssd1306_DrawString(uint16_t x, uint16_t y, char* text, struct FONT_DEF font)
-{
-  uint8_t l;
-  for (l = 0; l < strlen(text); l++)
-  {
-    Ssd1306_DrawChar(x + (l * (font.u8Width + 1)), y, text[l], font);
-  }
-}*/
-
-/**************************************************************************/
-/*!
-    @brief  Shifts the contents of the frame buffer up the specified
-            number of pixels
-
-    @param[in]  height
-                The number of pixels to shift the frame buffer up, leaving
-                a blank space at the bottom of the frame buffer x pixels
-                high
-
-    @section Example
-
-    @code 
-
-    #include "drivers/lcd/bitmap/ssd1306/ssd1306.h"
-    #include "drivers/lcd/smallfonts.h"
-    
-    // Configure the pins and initialise the LCD screen
-    Ssd1306_Init();
-
-    // Enable the backlight
-    Ssd1306_BLEnable();
-
-    // Continually write some text, scrolling upward one line each time
-    while (1)
-    {
-      // Shift the buffer up 8 pixels (adjust for font-height)
-      Ssd1306_ShiftFrameBuffer(8);
-      // Render some text on the screen with different fonts
-      Ssd1306_DrawString(1, 56, "INSERT TEXT HERE", Font_System5x8);
-      // Refresh the screen to see the results
-      Ssd1306_Refresh();
-      // Wait a bit before writing the next line
-      systickDelay(1000);
-    }
-
-    @endcode
-*/
-/**************************************************************************/
-void Ssd1306_ShiftFrameBuffer( uint8_t height )
-{
-  if (height == 0) return;
-  if (height >= SSD1306_LCDHEIGHT)
-  {
-    // Clear the entire frame buffer
-    Ssd1306_ClearScreen();
-    return;
-  }
-
-  // This is horribly inefficient, but at least easy to understand
-  // In a production environment, this should be significantly optimised
-
-  uint8_t y, x;
-  for (y = 0; y < SSD1306_LCDHEIGHT; y++)
-  {
-    for (x = 0; x < SSD1306_LCDWIDTH; x++)
-    {
-      if ((SSD1306_LCDHEIGHT - 1) - y > height)
-      {
-        // Shift height from further ahead in the buffer
-        Ssd1306_GetPixel(x, y + height) ? Ssd1306_DrawPixel(x, y) : Ssd1306_ClearPixel(x, y);
-      }
-      else
-      {
-        // Clear the entire line
-        Ssd1306_ClearPixel(x, y);
-      }
-    }
-  }
 }

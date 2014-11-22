@@ -1,10 +1,10 @@
 /**
  ******************************************************************************
- * @file      startup_stm32f10x_md_vl.c
+ * @file      startup_stm32f10x_hd.c
  * @author    Coocox
  * @version   V1.0
- * @date      3/4/2011
- * @brief     STM32F10x Medium Density Value Line Devices Startup code.
+ * @date      3/7/2011
+ * @brief     STM32F10x High Density Devices Startup code.
  *            This module performs:
  *                - Set the initial SP
  *                - Set the vector table entries with the exceptions ISR address
@@ -18,7 +18,7 @@
  
 
 /*----------Stack Configuration-----------------------------------------------*/  
-#define STACK_SIZE       0x00000100      /*!< The Stack size suggest using even number    */
+#define STACK_SIZE       0x00000100      /*!< The Stack size suggest using even number     */
 __attribute__ ((section(".co_stack")))
 unsigned long pulStack[STACK_SIZE];      
 
@@ -58,11 +58,15 @@ void WEAK  DMA1_Channel4_IRQHandler(void);
 void WEAK  DMA1_Channel5_IRQHandler(void);
 void WEAK  DMA1_Channel6_IRQHandler(void);
 void WEAK  DMA1_Channel7_IRQHandler(void);
-void WEAK  ADC1_IRQHandler(void);
+void WEAK  ADC1_2_IRQHandler(void);
+void WEAK  USB_HP_CAN1_TX_IRQHandler(void);
+void WEAK  USB_LP_CAN1_RX0_IRQHandler(void);
+void WEAK  CAN1_RX1_IRQHandler(void);
+void WEAK  CAN1_SCE_IRQHandler(void);
 void WEAK  EXTI9_5_IRQHandler(void);
-void WEAK  TIM1_BRK_TIM15_IRQHandler(void);
-void WEAK  TIM1_UP_TIM16_IRQHandler(void);
-void WEAK  TIM1_TRG_COM_TIM17_IRQHandler(void);
+void WEAK  TIM1_BRK_IRQHandler(void);
+void WEAK  TIM1_UP_IRQHandler(void);
+void WEAK  TIM1_TRG_COM_IRQHandler(void);
 void WEAK  TIM1_CC_IRQHandler(void);
 void WEAK  TIM2_IRQHandler(void);
 void WEAK  TIM3_IRQHandler(void);
@@ -78,9 +82,25 @@ void WEAK  USART2_IRQHandler(void);
 void WEAK  USART3_IRQHandler(void);
 void WEAK  EXTI15_10_IRQHandler(void);
 void WEAK  RTCAlarm_IRQHandler(void);
-void WEAK  CEC_IRQHandler(void); 
-void WEAK  TIM6_DAC_IRQHandler(void);
-void WEAK  TIM7_IRQHandler(void); 
+void WEAK  USBWakeUp_IRQHandler(void); 
+void WEAK  TIM8_BRK_IRQHandler(void);
+void WEAK  TIM8_UP_IRQHandler(void);
+void WEAK  TIM8_TRG_COM_IRQHandler(void);
+void WEAK  TIM8_CC_IRQHandler(void);
+void WEAK  ADC3_IRQHandler(void);
+void WEAK  FSMC_IRQHandler(void);
+void WEAK  SDIO_IRQHandler(void);
+void WEAK  TIM5_IRQHandler(void);
+void WEAK  SPI3_IRQHandler(void);
+void WEAK  UART4_IRQHandler(void);
+void WEAK  UART5_IRQHandler(void);
+void WEAK  TIM6_IRQHandler(void);
+void WEAK  TIM7_IRQHandler(void);
+void WEAK  DMA2_Channel1_IRQHandler(void);
+void WEAK  DMA2_Channel2_IRQHandler(void); 
+void WEAK  DMA2_Channel3_IRQHandler(void);
+void WEAK  DMA2_Channel4_5_IRQHandler(void); 
+
 
 /*----------Symbols defined in linker script----------------------------------*/  
 extern unsigned long _sidata;    /*!< Start address for the initialization 
@@ -141,15 +161,15 @@ void (* const g_pfnVectors[])(void) =
   DMA1_Channel5_IRQHandler,     /*!< 15: DMA1 Channel 5                       */
   DMA1_Channel6_IRQHandler,     /*!< 16: DMA1 Channel 6                       */
   DMA1_Channel7_IRQHandler,     /*!< 17: DMA1 Channel 7                       */
-  ADC1_IRQHandler,              /*!< 18: ADC1                                 */
-  0,                            /*!< 19: USB High Priority or CAN1 TX         */
-  0,                            /*!< 20: USB Low  Priority or CAN1 RX0        */
-  0,                            /*!< 21: CAN1 RX1                             */
-  0,                            /*!< 22: CAN1 SCE                             */
+  ADC1_2_IRQHandler,            /*!< 18: ADC1 & ADC2                          */
+  USB_HP_CAN1_TX_IRQHandler,    /*!< 19: USB High Priority or CAN1 TX         */
+  USB_LP_CAN1_RX0_IRQHandler,   /*!< 20: USB Low  Priority or CAN1 RX0        */
+  CAN1_RX1_IRQHandler,          /*!< 21: CAN1 RX1                             */
+  CAN1_SCE_IRQHandler,          /*!< 22: CAN1 SCE                             */
   EXTI9_5_IRQHandler,           /*!< 23: EXTI Line 9..5                       */
-  TIM1_BRK_TIM15_IRQHandler,    /*!< 24: TIM1 Break and TIM15                 */
-  TIM1_UP_TIM16_IRQHandler,     /*!< 25: TIM1 Update and TIM16                */
-  TIM1_TRG_COM_TIM17_IRQHandler,/*!< 26: TIM1 Trigger and Commutation and TIM17        */
+  TIM1_BRK_IRQHandler,          /*!< 24: TIM1 Break                           */
+  TIM1_UP_IRQHandler,           /*!< 25: TIM1 Update                          */
+  TIM1_TRG_COM_IRQHandler,      /*!< 26: TIM1 Trigger and Commutation         */
   TIM1_CC_IRQHandler,           /*!< 27: TIM1 Capture Compare                 */
   TIM2_IRQHandler,              /*!< 28: TIM2                                 */
   TIM3_IRQHandler,              /*!< 29: TIM3                                 */
@@ -165,11 +185,24 @@ void (* const g_pfnVectors[])(void) =
   USART3_IRQHandler,            /*!< 39: USART3                               */
   EXTI15_10_IRQHandler,         /*!< 40: EXTI Line 15..10                     */
   RTCAlarm_IRQHandler,          /*!< 41: RTC Alarm through EXTI Line          */
-  CEC_IRQHandler,               /*!< 42: HDMI-CEC                             */  
-  0,0,0,0,0,0,                  /*!< Reserved                                 */
-  0,0,0,0,0,                    /*!< Reserved                                 */ 
-  TIM6_DAC_IRQHandler,           /*!< 54: TIM6 and DAC underrun                */
-  TIM7_IRQHandler,               /*!< 55: TIM7                                 */
+  USBWakeUp_IRQHandler,         /*!< 42: USB Wakeup from suspend              */  
+  TIM8_BRK_IRQHandler,          /*!< 43: TIM8 Break                           */        
+  TIM8_UP_IRQHandler,           /*!< 44: TIM8 Update                          */ 
+  TIM8_TRG_COM_IRQHandler,      /*!< 45: TIM8 Trigger and Commutation         */
+  TIM8_CC_IRQHandler,           /*!< 46: TIM8 Capture Compare                 */
+  ADC3_IRQHandler,              /*!< 47: ADC3                                 */
+  FSMC_IRQHandler,              /*!< 48: FSMC                                 */
+  SDIO_IRQHandler,              /*!< 49: SDIO                                 */
+  TIM5_IRQHandler,              /*!< 50: TIM5                                 */
+  SPI3_IRQHandler,              /*!< 51: SPI3                                 */
+  UART4_IRQHandler,             /*!< 52: UART4                                */     
+  UART5_IRQHandler,             /*!< 52: UART5                                */           
+  TIM6_IRQHandler,              /*!< 53: TIM6                                 */           
+  TIM7_IRQHandler,              /*!< 54: TIM7                                 */           
+  DMA2_Channel1_IRQHandler,     /*!< 55: DMA2 Channel1                        */  
+  DMA2_Channel2_IRQHandler,     /*!< 56: DMA2 Channel2                        */  
+  DMA2_Channel3_IRQHandler,     /*!< 57: DMA2 Channel3                        */    
+  DMA2_Channel4_5_IRQHandler,   /*!< 58: DMA2 Channel4 & Channel5             */   
   (void *)0xF108F85F            /*!< Boot in RAM mode                         */
 };        
 
@@ -201,7 +234,7 @@ void Default_Reset_Handler(void)
         "  ldr     r1, =_ebss\n"
         "  mov     r2, #0\n"
         "  .thumb_func\n"
-        "  zero_loop:\n"
+        "zero_loop:\n"
         "    cmp     r0, r1\n"
         "    it      lt\n"
         "    strlt   r2, [r0], #4\n"
@@ -247,11 +280,15 @@ void Default_Reset_Handler(void)
 #pragma weak DMA1_Channel5_IRQHandler = Default_Handler
 #pragma weak DMA1_Channel6_IRQHandler = Default_Handler
 #pragma weak DMA1_Channel7_IRQHandler = Default_Handler
-#pragma weak ADC1_IRQHandler = Default_Handler
+#pragma weak ADC1_2_IRQHandler = Default_Handler
+#pragma weak USB_HP_CAN1_TX_IRQHandler = Default_Handler
+#pragma weak USB_LP_CAN1_RX0_IRQHandler = Default_Handler
+#pragma weak CAN1_RX1_IRQHandler = Default_Handler
+#pragma weak CAN1_SCE_IRQHandler = Default_Handler
 #pragma weak EXTI9_5_IRQHandler = Default_Handler
-#pragma weak TIM1_BRK_TIM15_IRQHandler = Default_Handler
-#pragma weak TIM1_UP_TIM16_IRQHandler = Default_Handler
-#pragma weak TIM1_TRG_COM_TIM17_IRQHandler = Default_Handler
+#pragma weak TIM1_BRK_IRQHandler = Default_Handler
+#pragma weak TIM1_UP_IRQHandler = Default_Handler
+#pragma weak TIM1_TRG_COM_IRQHandler = Default_Handler
 #pragma weak TIM1_CC_IRQHandler = Default_Handler
 #pragma weak TIM2_IRQHandler = Default_Handler
 #pragma weak TIM3_IRQHandler = Default_Handler
@@ -267,9 +304,25 @@ void Default_Reset_Handler(void)
 #pragma weak USART3_IRQHandler = Default_Handler
 #pragma weak EXTI15_10_IRQHandler = Default_Handler
 #pragma weak RTCAlarm_IRQHandler = Default_Handler
-#pragma weak CEC_IRQHandler = Default_Handler
-#pragma weak TIM6_DAC_IRQHandler = Default_Handler
+#pragma weak USBWakeUp_IRQHandler = Default_Handler
+#pragma weak TIM8_BRK_IRQHandler = Default_Handler
+#pragma weak TIM8_UP_IRQHandler = Default_Handler
+#pragma weak TIM8_TRG_COM_IRQHandler = Default_Handler
+#pragma weak TIM8_CC_IRQHandler = Default_Handler
+#pragma weak ADC3_IRQHandler = Default_Handler
+#pragma weak FSMC_IRQHandler = Default_Handler
+#pragma weak SDIO_IRQHandler = Default_Handler
+#pragma weak TIM5_IRQHandler = Default_Handler
+#pragma weak SPI3_IRQHandler = Default_Handler
+#pragma weak UART4_IRQHandler = Default_Handler
+#pragma weak UART5_IRQHandler = Default_Handler
+#pragma weak TIM6_IRQHandler = Default_Handler
 #pragma weak TIM7_IRQHandler = Default_Handler
+#pragma weak DMA2_Channel1_IRQHandler = Default_Handler
+#pragma weak DMA2_Channel2_IRQHandler = Default_Handler
+#pragma weak DMA2_Channel3_IRQHandler = Default_Handler
+#pragma weak DMA2_Channel4_5_IRQHandler = Default_Handler
+
 
 /**
   * @brief  This is the code that gets called when the processor receives an 
