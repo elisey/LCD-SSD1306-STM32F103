@@ -1,58 +1,9 @@
-#include "ssd1306.h"
-#include "ssd1306_HAL.h"
+#include "ssd1306_driver.h"
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 
-void lcdProcess(void *param)
-{
-	while(1)
-	{
-		int i;
-		for (i = 0; i < 127; ++i) {
-			Ssd1306_HAL_Lock();
-			Ssd1306_ClearScreen();
-			LCD_DrawStraightLine(i, 0, i, 63);
-			Ssd1306_HAL_Unlock();
-			vTaskDelay(15/portTICK_RATE_MS);
-		}
-	}
-
-}
-
-int main(void)
-{
-
-	xTaskCreate(
-			Ssd1306_HAL_Process,
-			"RadioHandler",
-			200,
-			NULL,
-			tskIDLE_PRIORITY + 1,
-			NULL);
-
-	xTaskCreate(
-			lcdProcess,
-			"RadioHandler",
-			200,
-			NULL,
-			tskIDLE_PRIORITY + 1,
-			NULL);
-
-	//Ssd1306_HAL_Init();
-	Ssd1306_Init(0);
-
-
-	vTaskStartScheduler();
-
-    while(1)
-    {
-
-    }
-}
-
-
-
+#include "uart.h"
 
 void LCD_DrawStraightLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
@@ -81,6 +32,68 @@ void LCD_DrawStraightLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
         }
     }
 }
+
+#include "font_anonymous_pro.h"
+#include "font_trebuchet_9.h"
+#include "font_pixeldust_24.h"
+#include "font_bitlow_28.h"
+void lcdProcess(void *param)
+{
+	while(1)
+	{
+		uint16_t i;
+		for (i = 0; i < 127; ++i) {
+			Ssd1306_HAL_Lock();
+			Ssd1306_ClearScreen();
+			//LCD_DrawStraightLine(i, 0, i, 63);
+			fontsDrawString(0,0, &trebuchetMS9ptFontInfo, "Test msg!");
+			fontsDrawString(10,30, &bitLow28ptFontInfo, "045");
+			//fontsDrawString(0,40, &trebuchetMS9ptFontInfo, "1234567890 !@#$%^&");
+			Ssd1306_HAL_Unlock();
+			vTaskDelay(15/portTICK_RATE_MS);
+		}
+	}
+
+}
+
+
+
+int main(void)
+{
+
+	UART_Init();
+	xTaskCreate(
+			Ssd1306_Task,
+			"RadioHandler",
+			200,
+			NULL,
+			tskIDLE_PRIORITY + 2,
+			NULL);
+
+	xTaskCreate(
+			lcdProcess,
+			"RadioHandler",
+			200,
+			NULL,
+			tskIDLE_PRIORITY + 1,
+			NULL);
+
+	//Ssd1306_HAL_Init();
+
+
+
+	vTaskStartScheduler();
+
+    while(1)
+    {
+
+    }
+}
+
+
+
+
+
 
 void delay()
 {
